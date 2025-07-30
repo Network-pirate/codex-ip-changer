@@ -1,88 +1,87 @@
-# 🛡️ CODEX IP CHANGER - LINUX EDITION
+# 🛡️ CODEX IP CHANGER
 
-A powerful and clean **Tor-based IP rotation tool** made for **Kali Linux** and **Debian-based systems**.  
-Built for privacy, security testing, and online anonymity — without needing to touch Wi-Fi proxy settings manually.
+A powerful, dual-platform IP changer for **Termux (Android)** and **Kali/Linux (Desktop)**.  
+Rotate your IP address automatically or by country using the Tor network — with just one click.
 
-> 🧑‍💻 Made by **Tawhed** • Educational purposes only.
+> ⚠️ For **educational use only**. Built by **Tawhed** with ❤️ in Termux & Kali Linux.
 
 ---
 
-## 📸 Preview
+## 📦 Supported Platforms
+
+| Platform     | Script                | Proxy Config |
+|--------------|------------------------|------------------|
+| Termux (Android) | `ipchanger-termux.sh` | ✅ Manual Wi-Fi Proxy |
+| Kali/Linux   | `ipchanger-kali.sh`     | ❌ No config needed |
+
+---
+
+## ⚙️ Features
+
+- 🔄 Auto IP rotation via Tor
+- 🌍 Country-based IP selection
+- ⚙️ Automatic requirement installation
+- 🧼 Clean hacker-style output (green IP ✅)
+- ☑️ No proxy config needed for Linux
+- ✅ Fully tested on Termux and Kali
+- 🐧 Based on Tor + Privoxy combo
+
+---
+
+## 🚀 Installation
 
 ```bash
-🌐 New IP: 176.57.189.45 ✅
+git clone https://github.com/Network-pirate/codex-ip-changer.git
+cd codex-ip-changer
+chmod +x ipchanger-*.sh
+```
+
+---
+
+### ▶️ For Kali/Linux:
+```bash
+./ipchanger-kali.sh
+```
+✅ Automatically installs: `tor`, `privoxy`, `curl`  
+✅ No need to manually set system proxy
+
+---
+
+### 📱 For Termux (Android):
+```bash
+./ipchanger-termux.sh
+```
+⚠️ After running, **go to Wi-Fi settings** and manually set:  
+- Proxy: `127.0.0.1`  
+- Port: `8118`
+
+---
+
+## 📸 Preview Output
+
+```bash
+🌐 New IP: 185.220.101.45 ✅
 [Proxy]: 127.0.0.1:8118 🛰️
 ```
 
 ---
 
-## 🧠 Features
+## 🔌 Stop / Exit
 
-- ✅ One-click **Auto IP Rotation** using Tor  
-- 🌍 **Country-Based Exit Node Selector**  
-- ⚙️ Automatically installs all dependencies  
-- 🔌 No Wi-Fi or browser proxy setup needed  
-- 🧼 Clean output — hacker terminal style  
-- 🐧 Made for **Kali Linux / Debian Linux**
+Press `CTRL + C` to stop the script at any time.  
+Network returns to default automatically.
 
 ---
 
-## 🛠️ Installation
+## 🛡️ Disclaimer
 
-```bash
-git clone https://github.com/Network-pirate/codex-ip-changer-linux.git
-cd codex-ip-changer-linux
-chmod +x ipchanger-kali.sh
-./ipchanger-kali.sh
-```
-
-> 🔐 Script will auto-install: `tor`, `privoxy`, and `curl`  
-> ⚠️ You may be prompted for `sudo` during setup
+This tool is provided for **educational** and **cybersecurity learning** purposes only.  
+Misuse of this tool is not the author’s responsibility.
 
 ---
 
-## 🧪 Usage
-
-You’ll get a menu like this:
-
-```bash
-==========================================
-         CODEX IP CHANGER - LINUX         
-           MADE BY TAWHED                 
-==========================================
-
-1) Auto-Rotate Random IPs
-2) Country-Based IP Selector
-3) Exit
-```
-
-### ▶ Option 1: Auto-Rotate IPs
-- Just enter the rotation interval in seconds (e.g. `5`)
-- Tor will refresh and fetch new IP automatically
-
-### 🌍 Option 2: Country-Based IPs
-- Select from ISO country codes (e.g. `us`, `fr`, `de`, `ae`)
-- Tor will use exit nodes only from that country
-- Useful for region testing or bypassing filters
-
----
-
-## ❓ Troubleshooting
-
-- ❌ If IP doesn't change: some countries have few exit nodes — try another country like `us`, `de`, or `ru`  
-- 🔄 If stuck: Press `CTRL+C` to stop script and restart  
-- 🌐 Your system’s proxy will reset on exit — no config needed
-
----
-
-## ⚖️ Disclaimer
-
-This tool is intended for **educational and ethical use only**.  
-Any misuse is solely the user's responsibility.
-
----
-
-## 👑 Author
+## 👤 Author
 
 - GitHub: [Network-pirate](https://github.com/Network-pirate)
-- Tool by: **Tawhed**
+- Coder: **Tawhed**
+- Projects: `Codex IP Changer`, `CC-KILLER`, more coming soon!
