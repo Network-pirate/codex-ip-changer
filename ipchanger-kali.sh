@@ -1,89 +1,53 @@
 #!/bin/bash
 
-# CODEx IP CHANGER - KALI LINUX EDITION
-# Made by Tawhed | Linux Version
+===== Colors =====
 
-# Required services
-TORRC_PATH="/etc/tor/torrc"
-PRIVOXY_CONFIG="/etc/privoxy/config"
-ROTATION_TIME=5
+GREEN="\e[1;32m" BLUE="\e[1;34m" YELLOW="\e[1;33m" RED="\e[1;31m" NC="\e[0m"
 
-# Colors
-GREEN="\e[1;32m"
-BLUE="\e[1;34m"
-NC="\e[0m"
+===== Trap on Exit (Cleanup Proxy Config) =====
 
-# Function: Show new IP
-function show_ip() {
-    NEW_IP=$(curl -s --socks5 127.0.0.1:9050 https://api.ipify.org)
-    echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}"
-    echo -e "${BLUE}[Proxy]: 127.0.0.1:8118 🛰️${NC}"
-    echo
-}
+cleanup() { echo -e "\n${RED}[!] Exiting... Cleaning up proxy settings!${NC}" pkill tor > /dev/null 2>&1 pkill privoxy > /dev/null 2>&1 gsettings set org.gnome.system.proxy mode 'none' > /dev/null 2>&1 exit 1 } trap cleanup INT TERM
 
-# Function: Start services
-function start_services() {
-    sudo systemctl start tor
-    sudo systemctl start privoxy
-    sleep 3
-}
+===== Install Dependencies Automatically =====
 
-# Function: Auto-Rotate IP
-function auto_rotate() {
-    echo -ne "\nEnter rotation interval (in seconds): "
-    read -r ROTATION_TIME
-    while true; do
-        sudo systemctl restart tor
-        sleep 8
-        show_ip
-        sleep "$ROTATION_TIME"
-    done
-}
+echo -e "${BLUE}[+] Checking dependencies...${NC}" sudo apt update -y > /dev/null 2>&1 sudo apt install tor privoxy curl netcat -y > /dev/null 2>&1
 
-# Function: Country-based IP rotation
-function country_ip() {
-    echo -ne "\nEnter country code (e.g. us, de, fr): "
-    read -r COUNTRY
+===== Kill Old Processes =====
 
-    # Update torrc with new ExitNode
-    sudo sed -i '/^ExitNodes/d' "$TORRC_PATH"
-    sudo sed -i '/^StrictNodes/d' "$TORRC_PATH"
-    echo "ExitNodes {$COUNTRY}" | sudo tee -a "$TORRC_PATH" > /dev/null
-    echo "StrictNodes 1" | sudo tee -a "$TORRC_PATH" > /dev/null
+pkill tor > /dev/null 2>&1 pkill privoxy > /dev/null 2>&1 rm -rf ~/.tor_ipchanger ~/.tor_country ~/.privoxy
 
-    sudo systemctl restart tor
-    sleep 10
+===== Menu Banner =====
 
-    echo -ne "\nEnter rotation interval (in seconds): "
-    read -r ROTATION_TIME
+clear echo -e "${GREEN}╔══════════════════════════════════════════╗" echo -e "${GREEN}║           ${YELLOW}CODEX IP CHANGER${GREEN}               ║" echo -e "${GREEN}║           ${BLUE} MADE BY TAWHED${GREEN}                ║" echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}" echo -e "${YELLOW}[1]${NC} Random IP Rotation" echo -e "${YELLOW}[2]${NC} Country-Based IP Change" echo -e "${YELLOW}[3]${NC} Exit" echo -ne "\n${BLUE}Select an option: ${NC}" read -r OPTION
 
-    while true; do
-        sudo systemctl restart tor
-        sleep 8
-        show_ip
-        sleep "$ROTATION_TIME"
-    done
-}
+===== Shared Privoxy Setup + Proxy Enable =====
 
-# Main Menu
-clear
-echo -e "${GREEN}==========================================${NC}"
-echo -e "${GREEN}         CODEX IP CHANGER - LINUX         ${NC}"
-echo -e "${GREEN}           MADE BY TAWHED                 ${NC}"
-echo -e "${GREEN}==========================================${NC}"
-echo -e "\n1) Auto-Rotate Random IPs"
-echo -e "2) Country-Based IP Selector"
-echo -e "3) Exit"
-echo -ne "\nChoose an option: "
-read -r CHOICE
+start_privoxy() { mkdir -p ~/.privoxy echo "listen-address 127.0.0.1:8118" > ~/.privoxy/config echo "forward-socks5 / 127.0.0.1:9050 ." >> ~/.privoxy/config privoxy ~/.privoxy/config > /dev/null 2>&1 & gsettings set org.gnome.system.proxy mode 'manual' gsettings set org.gnome.system.proxy.http host '127.0.0.1' gsettings set org.gnome.system.proxy.http port 8118 gsettings set org.gnome.system.proxy.https host '127.0.0.1' gsettings set org.gnome.system.proxy.https port 8118 }
 
-start_services
+===== Option 1: Random IP Rotation =====
 
-if [[ "$CHOICE" == "1" ]]; then
-    auto_rotate
-elif [[ "$CHOICE" == "2" ]]; then
-    country_ip
-else
-    echo -e "\n${BLUE}Exiting...${NC}"
-    exit 0
-fi
+if [[ "$OPTION" == "1" ]]; then mkdir -p ~/.tor_ipchanger/data cat <<EOF > ~/.tor_ipchanger/torrc SocksPort 9050 ControlPort 9051 DataDirectory ~/.tor_ipchanger/data CookieAuthentication 0 EOF
+
+tor -f ~/.tor_ipchanger/torrc > /dev/null 2>&1 & sleep 10 start_privoxy echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}" read -r ROTATION_TIME [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
+
+while true; do echo -e "AUTHENTICATE ""\nSIGNAL NEWNYM\nQUIT" | nc 127.0.0.1 9051 > /dev/null 2>&1 sleep 3 NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org) echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}" echo -e "${BLUE}[Proxy]: 127.0.0.1:8118 🛰️${NC}" sleep "$ROTATION_TIME" done
+
+===== Option 2: Country-Based IP Change =====
+
+elif [[ "$OPTION" == "2" ]]; then declare -A countries=( [US]="United States" [DE]="Germany" [FR]="France" [IN]="India" [RU]="Russia" [CA]="Canada" [UK]="United Kingdom" [JP]="Japan" [CN]="China" [TR]="Turkey" [UA]="Ukraine" [AU]="Australia" [BR]="Brazil" [IT]="Italy" [KR]="South Korea" [SA]="Saudi Arabia" [SE]="Sweden" [NL]="Netherlands" [NO]="Norway" [ZA]="South Africa" [CH]="Switzerland" [MX]="Mexico" [PL]="Poland" [BE]="Belgium" [ES]="Spain" [SG]="Singapore" [AR]="Argentina" [BD]="Bangladesh" [PK]="Pakistan" [EG]="Egypt" [TH]="Thailand" [ID]="Indonesia" [PH]="Philippines" [VN]="Vietnam" [IR]="Iran" [FI]="Finland" [GR]="Greece" [CO]="Colombia" [NZ]="New Zealand" [MY]="Malaysia" [RO]="Romania" [HK]="Hong Kong" [IL]="Israel" [HU]="Hungary" [AE]="UAE" )
+
+clear echo -e "${BLUE}Available Countries:${NC}" for code in "${!countries[@]}"; do printf "${GREEN}%-5s${NC} => ${BLUE}%s${NC}\n" "$code" "${countries[$code]}" done
+
+echo -ne "\n${YELLOW}Enter country code (e.g., US, IN): ${NC}" read -r COUNTRY COUNTRY=$(echo "$COUNTRY" | tr '[:lower:]' '[:upper:]')
+
+mkdir -p ~/.tor_country/data cat <<EOF > ~/.tor_country/torrc SocksPort 9050 ControlPort 9051 ExitNodes {$COUNTRY} StrictNodes 1 DataDirectory ~/.tor_country/data CookieAuthentication 0 EOF
+
+tor -f ~/.tor_country/torrc > /dev/null 2>&1 & sleep 10 start_privoxy echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}" read -r ROTATION_TIME [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
+
+while true; do echo -e "AUTHENTICATE ""\nSIGNAL NEWNYM\nQUIT" | nc 127.0.0.1 9051 > /dev/null 2>&1 sleep 3 NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org) echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}" echo -e "${BLUE}[Proxy]: 127.0.0.1:8118 🛰️${NC}" sleep "$ROTATION_TIME" done
+
+===== Option 3: Exit =====
+
+elif [[ "$OPTION" == "3" ]]; then echo -e "${GREEN}Goodbye!${NC}" exit 0 else echo -e "${RED}Invalid option.${NC}" exit 1 fi
+
+ok
