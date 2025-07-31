@@ -76,7 +76,7 @@ Network returns to default automatically.
 ## 🛡️ Disclaimer
 
 This tool is provided for **educational** and **cybersecurity learning** purposes only.  
-Misuse of this tool is not the author’s responsibility.
+Misuse of this tool and cod is not the author’s responsibility.
 
 ---
 
