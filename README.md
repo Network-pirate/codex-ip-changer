@@ -1,18 +1,19 @@
 # 🛡️ CODEX IP CHANGER
 
-A powerful, dual-platform IP changer for **Termux (Android)** and **Kali/Linux (Desktop)**.  
+A powerful, dual-platform IP changer for **Termux (Android)**, **Kali/Linux (Desktop)**, and **Windows**.  
 Rotate your IP address automatically or by country using the Tor network — with just one click.
 
-> ⚠️ For **educational use only**. Built by **Tawhed** with ❤️ in Termux & Kali Linux.
+> ⚠️ For **educational use only**. Built by **Tawhed** with ❤️ in Termux, Kali & Windows.
 
 ---
 
 ## 📦 Supported Platforms
 
-| Platform     | Script                | Proxy Config |
-|--------------|------------------------|------------------|
-| Termux (Android) | `ipchanger-termux.sh` | ✅ Manual Wi-Fi Proxy |
-| Kali/Linux   | `ipchanger-kali.sh`     | ❌ No config needed |
+| Platform        | Script / File            | Proxy Config         |
+|------------------|---------------------------|------------------------|
+| Termux (Android) | `ipchanger-termux.sh`     | ✅ Manual Wi-Fi Proxy |
+| Kali/Linux       | `ipchanger-kali.sh`       | ✅ Auto Config |
+| Windows          | `codex-ipchanger.bat/.exe`| ✅ Auto Config + Restore |
 
 ---
 
@@ -22,8 +23,9 @@ Rotate your IP address automatically or by country using the Tor network — wit
 - 🌍 Country-based IP selection
 - ⚙️ Automatic requirement installation
 - 🧼 Clean hacker-style output (green IP ✅)
-- ☑️ No proxy config needed for Linux
-- ✅ Fully tested on Termux and Kali
+- ☑️ No proxy config needed (Linux + Windows)
+- 🪟 Windows version restores settings after exit
+- ✅ Fully tested on Termux, Kali, and Windows
 - 🐧 Based on Tor + Privoxy combo
 
 ---
@@ -43,7 +45,8 @@ chmod +x ipchanger-*.sh
 ./ipchanger-kali.sh
 ```
 ✅ Automatically installs: `tor`, `privoxy`, `curl`  
-✅ No need to manually set system proxy
+✅ Proxy is applied automatically  
+✅ Ctrl+C restores network defaults
 
 ---
 
@@ -54,6 +57,20 @@ chmod +x ipchanger-*.sh
 ⚠️ After running, **go to Wi-Fi settings** and manually set:  
 - Proxy: `127.0.0.1`  
 - Port: `8118`
+
+---
+
+### 🪟 For Windows:
+```bat
+codex-ipchanger.exe
+```
+✅ Runs from terminal or double-click  
+✅ Auto applies system proxy using `netsh`  
+✅ Auto IP change via Tor + Privoxy  
+✅ Menu: Random IP / Country-based / Exit  
+✅ On Ctrl+C or closing, **restores proxy to default**  
+✅ All traffic is routed system-wide  
+✅ No Tor Browser needed  
 
 ---
 
@@ -69,14 +86,15 @@ chmod +x ipchanger-*.sh
 ## 🔌 Stop / Exit
 
 Press `CTRL + C` to stop the script at any time.  
-Network returns to default automatically.
+✅ Linux & Windows will automatically revert proxy settings to default.  
+⚠️ On Termux, you must disable proxy manually from Wi-Fi settings.
 
 ---
 
 ## 🛡️ Disclaimer
 
 This tool is provided for **educational** and **cybersecurity learning** purposes only.  
-Misuse of this tool and cod is not the author’s responsibility.
+Misuse of this tool and code is not the author’s responsibility.
 
 ---
 
