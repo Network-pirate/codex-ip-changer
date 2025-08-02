@@ -13,7 +13,7 @@ Rotate your IP address automatically or by country using the Tor network — wit
 |------------------|---------------------------|------------------------|
 | Termux (Android) | `ipchanger-termux.sh`     | ✅ Manual Wi-Fi Proxy |
 | Kali/Linux       | `ipchanger-kali.sh`       | ✅ Auto Config |
-| Windows          | `codex-ipchanger.bat/.exe`| ✅ Auto Config + Restore |
+| Windows          | `codex-ipchanger-launcher.bat`| ✅ Auto Config + Restore |
 
 ---
 
@@ -30,12 +30,17 @@ Rotate your IP address automatically or by country using the Tor network — wit
 
 ---
 
-## 🚀 Installation
+## 🚀 Installation for Linux +termux
 
 ```bash
+apt update && apt upgrade -y
+apt install tor -y
+apt install privoxy -y
+apt install curl -y
+netcat git -y
 git clone https://github.com/Network-pirate/codex-ip-changer.git
 cd codex-ip-changer
-chmod +x ipchanger-*.sh
+chmod +x (according to your device)
 ```
 
 ---
@@ -62,15 +67,17 @@ chmod +x ipchanger-*.sh
 
 ### 🪟 For Windows:
 ```bat
-codex-ipchanger.exe
+codex-ipchanger-launcher.bat
 ```
-✅ Runs from terminal or double-click  
+✅ click on code or download zip file 
+✅ straight it and open IP-Changer-Windows
+✅ Runs from terminal or double-click run as administrator "codex-ipchanger-launcher.bat"
 ✅ Auto applies system proxy using `netsh`  
 ✅ Auto IP change via Tor + Privoxy  
 ✅ Menu: Random IP / Country-based / Exit  
 ✅ On Ctrl+C or closing, **restores proxy to default**  
 ✅ All traffic is routed system-wide  
-✅ No Tor Browser needed  
+✅ No need to install any requirement 
 
 ---
 
