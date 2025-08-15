@@ -23,7 +23,7 @@ Rotate your IP address automatically or by country using the Tor network — wit
 - 🌍 Country-based IP selection  
 - ⚙️ Automatic requirement installation  
 - 🧼 Clean hacker-style output (green IP ✅)  
-- ☑️ No proxy config needed (Linux + Windows)  
+- ☑️ No proxy config needed (Windows)  
 - 🪟 Windows version restores settings after exit  
 - ✅ Fully tested on Termux, Kali, and Windows  
 - 🐧 Based on Tor + Privoxy combo  
@@ -118,7 +118,9 @@ codex-ipchanger-WINDOWS.exe
 4. Run **Option 7** to start IP changing.  
 
 **Stopping the tool (Windows):**  
-1. Use **Stop Tor** and **Disconnect Tor from Windows** to avoid losing internet.  
+1. Use **Stop Tor** and **Disconnect Tor from Windows** to avoid losing internet.
+2. for some coding error and for windows policy I am unable to add **country best IP change option**
+3. ** but don't worry I will add the country bes Ip changer option as soon as possible **
 
 ---
 
