@@ -55,7 +55,7 @@ chmod +x (according to your device)
 
 ---
 
-### 🌐 Browser Network Configuration (Firefox Recommended)  
+### 🌐 Browser Network Configuration for Linux (Firefox Recommended)  
 
 **You can use any browser that supports manual proxy settings.**  
 
@@ -119,8 +119,12 @@ codex-ipchanger-WINDOWS.exe
 
 **Stopping the tool (Windows):**  
 1. Use **Stop Tor** and **Disconnect Tor from Windows** to avoid losing internet.
-2. for some coding error and for windows policy I am unable to add **country best IP change option**
-3. ** but don't worry I will add the country bes Ip changer option as soon as possible **
+
+---
+##IMPORTANT NOTE FOR WINDOWS 
+   
+1. for some coding error and for windows policy I am unable to add **country best IP change option**
+2. ** but don't worry I will add the country bes Ip changer option as soon as possible **
 
 ---
 
