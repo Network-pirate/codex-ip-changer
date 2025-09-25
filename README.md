@@ -48,7 +48,7 @@ chmod +x (according to your device)
 ### ▶️ For Kali/Linux:  
 
 ```bash
-./ipchanger-kali.sh
+./ipchanger-Linux.sh
 ```
 
 ✅ Automatically installs: `tor`, `privoxy`, `curl`  
@@ -57,7 +57,7 @@ chmod +x (according to your device)
 
 ### 🌐 Browser Network Configuration for Linux (Firefox Recommended)  
 
-** For Linux tool will change automatically system wide proxy but sometime Firefox or browser have proxy settings they ignore it in this case you have to configur it manually or are you can change the proxy setting to “Use system proxy settings”. **
+** For Linux tool will change automatically system wide proxy but sometime Firefox or browser have proxy settings they ignore it in this case you have to configur it manually or are you can change the proxy setting to  ## Use system proxy settings. **
 
 **You can use any browser that supports manual proxy settings.**  
 
