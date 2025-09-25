@@ -1,4 +1,4 @@
-#!/data/data/com.Linux/files/usr/bin/bash
+#!/bin/bash
 
 # ===== Colors =====
 GREEN="\e[1;32m"
@@ -8,16 +8,78 @@ RED="\e[1;31m"
 NC="\e[0m"
 
 # ===== Trap on Exit (Safe Cleanup) =====
-trap 'echo -e "\n${RED}[!] Exiting... Cleaning up!${NC}"; pkill tor; pkill privoxy; exit 1' INT TERM
+cleanup() {
+    echo -e "\n${RED}[!] Exiting... Cleaning up!${NC}"
+    pkill -f tor > /dev/null 2>&1
+    pkill -f privoxy > /dev/null 2>&1
+    reset_proxy
+    exit 1
+}
+trap cleanup INT TERM
 
 # ===== Dependencies =====
-pkg update -y > /dev/null 2>&1
-pkg install tor privoxy curl netcat-openbsd -y > /dev/null 2>&1
+echo -e "${YELLOW}[*] Updating and installing dependencies...${NC}"
+
+if command -v apt &> /dev/null; then
+    sudo apt-get update -y > /dev/null 2>&1
+    sudo apt-get install tor privoxy curl netcat-openbsd -y > /dev/null 2>&1
+elif command -v dnf &> /dev/null; then
+    sudo dnf install tor privoxy curl nmap-ncat -y > /dev/null 2>&1
+elif command -v yum &> /dev/null; then
+    sudo yum install tor privoxy curl nmap-ncat -y > /dev/null 2>&1
+elif command -v pacman &> /dev/null; then
+    sudo pacman -Sy --noconfirm tor privoxy curl openbsd-netcat > /dev/null 2>&1
+else
+    echo -e "${RED}[!] Error: No supported package manager found. Please install tor, privoxy, curl, and netcat manually.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}[+] Dependencies installed successfully!${NC}"
+
+# ===== Detect Netcat Command =====
+if command -v nc &> /dev/null; then
+    NC_CMD="nc"
+elif command -v ncat &> /dev/null; then
+    NC_CMD="ncat"
+elif command -v netcat &> /dev/null; then
+    NC_CMD="netcat"
+else
+    echo -e "${RED}[!] Netcat not found. Please install it manually.${NC}"
+    exit 1
+fi
 
 # ===== Kill Old Processes =====
-pkill tor > /dev/null 2>&1
-pkill privoxy > /dev/null 2>&1
+pkill -f tor > /dev/null 2>&1
+pkill -f privoxy > /dev/null 2>&1
 rm -rf ~/.tor_ipchanger ~/.tor_country ~/.privoxy
+
+# ===== Proxy Setup =====
+set_proxy() {
+    if command -v gsettings &> /dev/null; then
+        gsettings set org.gnome.system.proxy mode 'manual'
+        gsettings set org.gnome.system.proxy.http host '127.0.0.1'
+        gsettings set org.gnome.system.proxy.http port 8118
+        gsettings set org.gnome.system.proxy.https host '127.0.0.1'
+        gsettings set org.gnome.system.proxy.https port 8118
+    elif command -v kwriteconfig5 &> /dev/null; then
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 1
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpProxy "http://127.0.0.1:8118"
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpsProxy "http://127.0.0.1:8118"
+    elif command -v xfconf-query &> /dev/null; then
+        xfconf-query -c xfce4-session -p /general/HttpProxyHost -s "127.0.0.1"
+        xfconf-query -c xfce4-session -p /general/HttpProxyPort -s 8118
+    fi
+}
+
+reset_proxy() {
+    if command -v gsettings &> /dev/null; then
+        gsettings set org.gnome.system.proxy mode 'none'
+    elif command -v kwriteconfig5 &> /dev/null; then
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 0
+    elif command -v xfconf-query &> /dev/null; then
+        xfconf-query -c xfce4-session -p /general/HttpProxyHost -r -R
+        xfconf-query -c xfce4-session -p /general/HttpProxyPort -r -R
+    fi
+}
 
 # ===== Menu Banner =====
 clear
@@ -39,25 +101,38 @@ start_privoxy() {
   privoxy ~/.privoxy/config > /dev/null 2>&1 &
 }
 
+# ===== Wait for Tor to Boot =====
+wait_for_tor() {
+  for i in {1..20}; do
+    if curl --socks5 127.0.0.1:9050 -s https://check.torproject.org/ >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo -e "${RED}[!] Tor failed to start.${NC}"
+  cleanup
+}
+
 # ===== Option 1: Random IP Rotation =====
 if [[ "$OPTION" == "1" ]]; then
   mkdir -p ~/.tor_ipchanger/data
   cat <<EOF > ~/.tor_ipchanger/torrc
 SocksPort 9050
 ControlPort 9051
-DataDirectory ~/.tor_ipchanger/data
+DataDirectory $HOME/.tor_ipchanger/data
 CookieAuthentication 0
 EOF
 
   tor -f ~/.tor_ipchanger/torrc > /dev/null 2>&1 &
-  sleep 10
+  wait_for_tor
   start_privoxy
+  set_proxy
   echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}"
   read -r ROTATION_TIME
   [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
 
   while true; do
-    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | nc 127.0.0.1 9051 > /dev/null 2>&1
+    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | $NC_CMD 127.0.0.1 9051 > /dev/null 2>&1
     sleep 3
     NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org)
     echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}"
@@ -95,19 +170,20 @@ SocksPort 9050
 ControlPort 9051
 ExitNodes {$COUNTRY}
 StrictNodes 1
-DataDirectory ~/.tor_country/data
+DataDirectory $HOME/.tor_country/data
 CookieAuthentication 0
 EOF
 
   tor -f ~/.tor_country/torrc > /dev/null 2>&1 &
-  sleep 10
+  wait_for_tor
   start_privoxy
+  set_proxy
   echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}"
   read -r ROTATION_TIME
   [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
 
   while true; do
-    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | nc 127.0.0.1 9051 > /dev/null 2>&1
+    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | $NC_CMD 127.0.0.1 9051 > /dev/null 2>&1
     sleep 3
     NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org)
     echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}"
@@ -118,6 +194,7 @@ EOF
 # ===== Option 3: Exit =====
 elif [[ "$OPTION" == "3" ]]; then
   echo -e "${GREEN}Goodbye!${NC}"
+  reset_proxy
   exit 0
 else
   echo -e "${RED}Invalid option.${NC}"
