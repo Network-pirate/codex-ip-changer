@@ -7,11 +7,17 @@ YELLOW="\e[1;33m"
 RED="\e[1;31m"
 NC="\e[0m"
 
+# ===== Globals (do NOT change) =====
+TOR_PID=""
+PRIVOXY_PID=""
+NC_CMD=""
+
 # ===== Trap on Exit (Safe Cleanup) =====
 cleanup() {
     echo -e "\n${RED}[!] Exiting... Cleaning up!${NC}"
-    pkill -f tor > /dev/null 2>&1
-    pkill -f privoxy > /dev/null 2>&1
+    # kill only processes we started
+    if [[ -n "$PRIVOXY_PID" ]]; then kill "$PRIVOXY_PID" > /dev/null 2>&1 || true; fi
+    if [[ -n "$TOR_PID" ]]; then kill "$TOR_PID" > /dev/null 2>&1 || true; fi
     reset_proxy
     exit 1
 }
@@ -22,13 +28,13 @@ echo -e "${YELLOW}[*] Updating and installing dependencies...${NC}"
 
 if command -v apt &> /dev/null; then
     sudo apt-get update -y > /dev/null 2>&1
-    sudo apt-get install tor privoxy curl netcat-openbsd -y > /dev/null 2>&1
+    sudo apt-get install -y tor privoxy curl netcat-openbsd xxd >/dev/null 2>&1 || sudo apt-get install -y tor privoxy curl netcat-openbsd >/dev/null 2>&1
 elif command -v dnf &> /dev/null; then
-    sudo dnf install tor privoxy curl nmap-ncat -y > /dev/null 2>&1
+    sudo dnf install -y tor privoxy curl nmap-ncat xxd >/dev/null 2>&1 || sudo dnf install -y tor privoxy curl nmap-ncat >/dev/null 2>&1
 elif command -v yum &> /dev/null; then
-    sudo yum install tor privoxy curl nmap-ncat -y > /dev/null 2>&1
+    sudo yum install -y tor privoxy curl nmap-ncat xxd >/dev/null 2>&1 || sudo yum install -y tor privoxy curl nmap-ncat >/dev/null 2>&1
 elif command -v pacman &> /dev/null; then
-    sudo pacman -Sy --noconfirm tor privoxy curl openbsd-netcat > /dev/null 2>&1
+    sudo pacman -Sy --noconfirm tor privoxy curl openbsd-netcat xxd >/dev/null 2>&1 || sudo pacman -Sy --noconfirm tor privoxy curl openbsd-netcat >/dev/null 2>&1
 else
     echo -e "${RED}[!] Error: No supported package manager found. Please install tor, privoxy, curl, and netcat manually.${NC}"
     exit 1
@@ -47,38 +53,43 @@ else
     exit 1
 fi
 
-# ===== Kill Old Processes =====
-pkill -f tor > /dev/null 2>&1
-pkill -f privoxy > /dev/null 2>&1
-rm -rf ~/.tor_ipchanger ~/.tor_country ~/.privoxy
+# ===== Kill Old Data (only our folders) =====
+rm -rf "$HOME/.tor_ipchanger" "$HOME/.tor_country" "$HOME/.privoxy" 2>/dev/null || true
 
 # ===== Proxy Setup =====
 set_proxy() {
+    # GUI DE proxies
     if command -v gsettings &> /dev/null; then
-        gsettings set org.gnome.system.proxy mode 'manual'
-        gsettings set org.gnome.system.proxy.http host '127.0.0.1'
-        gsettings set org.gnome.system.proxy.http port 8118
-        gsettings set org.gnome.system.proxy.https host '127.0.0.1'
-        gsettings set org.gnome.system.proxy.https port 8118
+        gsettings set org.gnome.system.proxy mode 'manual' >/dev/null 2>&1 || true
+        gsettings set org.gnome.system.proxy.http host '127.0.0.1' >/dev/null 2>&1 || true
+        gsettings set org.gnome.system.proxy.http port 8118 >/dev/null 2>&1 || true
+        gsettings set org.gnome.system.proxy.https host '127.0.0.1' >/dev/null 2>&1 || true
+        gsettings set org.gnome.system.proxy.https port 8118 >/dev/null 2>&1 || true
     elif command -v kwriteconfig5 &> /dev/null; then
-        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 1
-        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpProxy "http://127.0.0.1:8118"
-        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpsProxy "http://127.0.0.1:8118"
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 1 >/dev/null 2>&1 || true
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpProxy "http://127.0.0.1:8118" >/dev/null 2>&1 || true
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key httpsProxy "http://127.0.0.1:8118" >/dev/null 2>&1 || true
     elif command -v xfconf-query &> /dev/null; then
-        xfconf-query -c xfce4-session -p /general/HttpProxyHost -s "127.0.0.1"
-        xfconf-query -c xfce4-session -p /general/HttpProxyPort -s 8118
+        xfconf-query -c xfce4-session -p /general/HttpProxyHost -s "127.0.0.1" >/dev/null 2>&1 || true
+        xfconf-query -c xfce4-session -p /general/HttpProxyPort -s 8118 >/dev/null 2>&1 || true
     fi
+
+    # CLI env proxy for curl/wget etc.
+    export http_proxy="http://127.0.0.1:8118"
+    export https_proxy="http://127.0.0.1:8118"
 }
 
 reset_proxy() {
     if command -v gsettings &> /dev/null; then
-        gsettings set org.gnome.system.proxy mode 'none'
+        gsettings set org.gnome.system.proxy mode 'none' >/dev/null 2>&1 || true
     elif command -v kwriteconfig5 &> /dev/null; then
-        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 0
+        kwriteconfig5 --file kioslaverc --group 'Proxy Settings' --key ProxyType 0 >/dev/null 2>&1 || true
     elif command -v xfconf-query &> /dev/null; then
-        xfconf-query -c xfce4-session -p /general/HttpProxyHost -r -R
-        xfconf-query -c xfce4-session -p /general/HttpProxyPort -r -R
+        xfconf-query -c xfce4-session -p /general/HttpProxyHost -r -R >/dev/null 2>&1 || true
+        xfconf-query -c xfce4-session -p /general/HttpProxyPort -r -R >/dev/null 2>&1 || true
     fi
+
+    unset http_proxy https_proxy
 }
 
 # ===== Menu Banner =====
@@ -95,36 +106,86 @@ read -r OPTION
 
 # ===== Shared Privoxy Setup =====
 start_privoxy() {
-  mkdir -p ~/.privoxy
-  echo "listen-address 127.0.0.1:8118" > ~/.privoxy/config
-  echo "forward-socks5 / 127.0.0.1:9050 ." >> ~/.privoxy/config
-  privoxy ~/.privoxy/config > /dev/null 2>&1 &
+  mkdir -p "$HOME/.privoxy"
+  echo "listen-address 127.0.0.1:8118" > "$HOME/.privoxy/config"
+  echo "forward-socks5 / 127.0.0.1:9050 ." >> "$HOME/.privoxy/config"
+  privoxy "$HOME/.privoxy/config" > /dev/null 2>&1 &
+  PRIVOXY_PID=$!
 }
 
-# ===== Wait for Tor to Boot =====
-wait_for_tor() {
-  for i in {1..20}; do
-    if curl --socks5 127.0.0.1:9050 -s https://check.torproject.org/ >/dev/null 2>&1; then
+# ===== Wait for Tor readiness =====
+wait_for_tor_sock_and_cookie() {
+  local data_dir="$1"
+  local tries=30
+  local attempt=0
+
+  # wait for SOCKS port to be listening
+  while [[ $attempt -lt $tries ]]; do
+    if command -v ss &> /dev/null; then
+      ss -ltn | grep -q ":9050" && break
+    else
+      netstat -ltn 2>/dev/null | grep -q ":9050" && break
+    fi
+    sleep 1
+    ((attempt++))
+  done
+
+  # wait for control cookie file
+  attempt=0
+  while [[ $attempt -lt $tries ]]; do
+    if [[ -f "$data_dir/control_auth_cookie" ]]; then
       return 0
     fi
-    sleep 2
+    sleep 1
+    ((attempt++))
   done
-  echo -e "${RED}[!] Tor failed to start.${NC}"
-  cleanup
+
+  return 1
+}
+
+# ===== Send control command (uses cookie auth) =====
+tor_control_newnym() {
+  local data_dir="$1"
+  local cookie_file="$data_dir/control_auth_cookie"
+  if [[ ! -f "$cookie_file" ]]; then
+    return 1
+  fi
+
+  # get cookie hex (portable)
+  if command -v xxd &> /dev/null; then
+    cookie_hex=$(xxd -p -c 256 "$cookie_file")
+  else
+    cookie_hex=$(hexdump -v -e '/1 "%02x"' "$cookie_file")
+  fi
+
+  printf 'AUTHENTICATE %s\r\nSIGNAL NEWNYM\r\nQUIT\r\n' "$cookie_hex" | $NC_CMD 127.0.0.1 9051 > /dev/null 2>&1
+  return $?
+}
+
+# ===== fetch IP via privoxy (safe) =====
+fetch_ip() {
+  curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org || true
 }
 
 # ===== Option 1: Random IP Rotation =====
 if [[ "$OPTION" == "1" ]]; then
-  mkdir -p ~/.tor_ipchanger/data
-  cat <<EOF > ~/.tor_ipchanger/torrc
+  data_dir="$HOME/.tor_ipchanger/data"
+  mkdir -p "$data_dir"
+  cat <<EOF > "$HOME/.tor_ipchanger/torrc"
 SocksPort 9050
 ControlPort 9051
-DataDirectory $HOME/.tor_ipchanger/data
-CookieAuthentication 0
+DataDirectory $data_dir
+CookieAuthentication 1
 EOF
 
-  tor -f ~/.tor_ipchanger/torrc > /dev/null 2>&1 &
-  wait_for_tor
+  tor -f "$HOME/.tor_ipchanger/torrc" > /dev/null 2>&1 &
+  TOR_PID=$!
+  # wait for tor sock and cookie
+  if ! wait_for_tor_sock_and_cookie "$data_dir"; then
+    echo -e "${RED}[!] Tor failed to start or create control cookie.${NC}"
+    cleanup
+  fi
+
   start_privoxy
   set_proxy
   echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}"
@@ -132,9 +193,13 @@ EOF
   [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
 
   while true; do
-    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | $NC_CMD 127.0.0.1 9051 > /dev/null 2>&1
+    # newnym via control cookie
+    if ! tor_control_newnym "$data_dir"; then
+      echo -e "${YELLOW}[!] WARNING: failed to signal NEWNYM. Retrying...${NC}"
+    fi
     sleep 3
-    NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org)
+    NEW_IP=$(fetch_ip)
+    [[ -z "$NEW_IP" ]] && NEW_IP="(no response)"
     echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}"
     echo -e "${BLUE}[Proxy]: 127.0.0.1:8118 🛰️${NC}"
     sleep "$ROTATION_TIME"
@@ -164,18 +229,39 @@ elif [[ "$OPTION" == "2" ]]; then
   read -r COUNTRY
   COUNTRY=$(echo "$COUNTRY" | tr '[:lower:]' '[:upper:]')
 
-  mkdir -p ~/.tor_country/data
-  cat <<EOF > ~/.tor_country/torrc
+  data_dir="$HOME/.tor_country/data"
+  mkdir -p "$data_dir"
+  cat <<EOF > "$HOME/.tor_country/torrc"
 SocksPort 9050
 ControlPort 9051
 ExitNodes {$COUNTRY}
 StrictNodes 1
-DataDirectory $HOME/.tor_country/data
-CookieAuthentication 0
+DataDirectory $data_dir
+CookieAuthentication 1
 EOF
 
-  tor -f ~/.tor_country/torrc > /dev/null 2>&1 &
-  wait_for_tor
+  tor -f "$HOME/.tor_country/torrc" > /dev/null 2>&1 &
+  TOR_PID=$!
+
+  if ! wait_for_tor_sock_and_cookie "$data_dir"; then
+    echo -e "${RED}[!] Tor failed to start with requested ExitNodes. Retrying without StrictNodes...${NC}"
+    # fallback: remove StrictNodes and ExitNodes and restart tor in random mode
+    kill "$TOR_PID" >/dev/null 2>&1 || true
+    sleep 1
+    cat <<EOF > "$HOME/.tor_country/torrc"
+SocksPort 9050
+ControlPort 9051
+DataDirectory $data_dir
+CookieAuthentication 1
+EOF
+    tor -f "$HOME/.tor_country/torrc" > /dev/null 2>&1 &
+    TOR_PID=$!
+    if ! wait_for_tor_sock_and_cookie "$data_dir"; then
+      echo -e "${RED}[!] Tor still failed to start. Aborting.${NC}"
+      cleanup
+    fi
+  fi
+
   start_privoxy
   set_proxy
   echo -ne "\n${BLUE}Enter rotation interval (in seconds): ${NC}"
@@ -183,9 +269,12 @@ EOF
   [[ "$ROTATION_TIME" -lt 5 ]] && ROTATION_TIME=10
 
   while true; do
-    echo -e "AUTHENTICATE \"\"\nSIGNAL NEWNYM\nQUIT" | $NC_CMD 127.0.0.1 9051 > /dev/null 2>&1
+    if ! tor_control_newnym "$data_dir"; then
+      echo -e "${YELLOW}[!] WARNING: failed to signal NEWNYM. Retrying...${NC}"
+    fi
     sleep 3
-    NEW_IP=$(curl --proxy http://127.0.0.1:8118 -s https://api64.ipify.org)
+    NEW_IP=$(fetch_ip)
+    [[ -z "$NEW_IP" ]] && NEW_IP="(no response)"
     echo -e "${GREEN}🌐 New IP: $NEW_IP ✅${NC}"
     echo -e "${BLUE}[Proxy]: 127.0.0.1:8118 🛰️${NC}"
     sleep "$ROTATION_TIME"
