@@ -67,7 +67,7 @@ chmod +x (according to your device)
 4. Select **Manual proxy configuration**.  
 5. Set:  
    - **HTTP Proxy**: `127.0.0.1`  
-   - **Port**: `8118`  
+   - **Port**: `9050`  
 6. ✅ Check **Use this proxy server for all protocols**.  
 7. Leave **No Proxy for** empty.  
 8. Click **OK**.  
